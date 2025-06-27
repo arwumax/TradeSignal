@@ -138,6 +138,9 @@ async function demonstrateCorrectSRAPIRequest() {
   const symbol = "SPY";
   const data = correctHistoricalData.data;
 
+  // Get API key from environment variable or use default
+  const srApiKey = process.env.SUPPORT_RESISTANCE_API_KEY || 'default-api-key';
+
   // Prepare the payload with the correct format
   const payload = {
     symbol: symbol,
@@ -158,7 +161,7 @@ async function demonstrateCorrectSRAPIRequest() {
   console.log("3. Request Headers:");
   console.log(JSON.stringify({
     "Content-Type": "application/json",
-    "X-API-Key": "default-api-key"
+    "X-API-Key": srApiKey
   }, null, 2));
   console.log();
 
@@ -199,6 +202,7 @@ async function demonstrateCorrectSRAPIRequest() {
   console.log("- Timestamp format uses 't' field with ISO string");
   console.log("- OHLCV data uses single letters: o, h, l, c, v");
   console.log("- Volume is included in each bar");
+  console.log("- API key is now retrieved from environment variable");
   console.log();
 
   console.log("10. Making the actual request...\n");
@@ -208,7 +212,7 @@ async function demonstrateCorrectSRAPIRequest() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": "default-api-key",
+        "X-API-Key": srApiKey,
       },
       body: JSON.stringify(payload),
     });

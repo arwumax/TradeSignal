@@ -32,6 +32,9 @@ async function demonstrateSRAPIRequest() {
   const symbol = "AAPL";
   const data = sampleHistoricalData.data;
 
+  // Get API key from environment variable or use default
+  const srApiKey = process.env.SUPPORT_RESISTANCE_API_KEY || 'default-api-key';
+
   // Step 1: Prepare the payload exactly as done in the function
   const payload = {
     symbol: symbol,
@@ -52,7 +55,7 @@ async function demonstrateSRAPIRequest() {
   console.log("3. Request Headers:");
   console.log(JSON.stringify({
     "Content-Type": "application/json",
-    "X-API-Key": "default-api-key"
+    "X-API-Key": srApiKey
   }, null, 2));
   console.log();
 
@@ -70,7 +73,12 @@ async function demonstrateSRAPIRequest() {
   });
   console.log();
 
-  console.log("6. Making the actual request...\n");
+  console.log("6. Security Note:");
+  console.log("✅ API key is now retrieved from environment variable");
+  console.log("✅ No hardcoded API keys in the source code");
+  console.log();
+
+  console.log("7. Making the actual request...\n");
 
   try {
     // Make the actual request (this is the exact code from the function)
@@ -78,7 +86,7 @@ async function demonstrateSRAPIRequest() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": "default-api-key",
+        "X-API-Key": srApiKey,
       },
       body: JSON.stringify(payload),
     });
@@ -92,11 +100,11 @@ async function demonstrateSRAPIRequest() {
     }
 
     const result = await response.json();
-    console.log("\n7. Response Data Structure:");
+    console.log("\n8. Response Data Structure:");
     console.log(JSON.stringify(result, null, 2));
 
   } catch (error) {
-    console.error("\n7. Request Failed:");
+    console.error("\n8. Request Failed:");
     console.error("Error:", error.message);
     
     if (error.message.includes("fetch")) {

@@ -48,6 +48,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Get API key from environment variables
+    const historicalDataApiKey = Deno.env.get('HISTORICAL_DATA_API_KEY');
+    if (!historicalDataApiKey) {
+      console.error("[FETCH-HISTORICAL-STORE] ❌ HISTORICAL_DATA_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "Historical data API key not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -96,12 +109,12 @@ Deno.serve(async (req: Request) => {
 
     console.log("[FETCH-HISTORICAL-STORE] 📤 Calling historical data API...");
 
-    // Call the historical data API
+    // Call the historical data API with environment variable API key
     const response = await fetch("https://stock-historical-data-downloader.maxwu.work/api/v1/download", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": "lmt_0818f2510d2c67ead3260d22511a5f58",
+        "X-API-Key": historicalDataApiKey,
       },
       body: JSON.stringify(requestPayload),
     });

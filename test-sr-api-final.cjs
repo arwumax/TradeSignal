@@ -6,6 +6,9 @@ async function demonstrateFinalCorrectSRAPIRequest() {
   // This is the CORRECT format that matches your example
   const symbol = "SPY";
   
+  // Get API key from environment variable or use default
+  const srApiKey = process.env.SUPPORT_RESISTANCE_API_KEY || 'default-api-key';
+  
   // The payload should directly contain arrays under each timeframe
   const payload = {
     "symbol": "SPY",
@@ -103,7 +106,7 @@ async function demonstrateFinalCorrectSRAPIRequest() {
   console.log("Method: POST");
   console.log("Headers:", JSON.stringify({
     "Content-Type": "application/json",
-    "X-API-Key": "default-api-key"
+    "X-API-Key": srApiKey
   }, null, 2));
   console.log();
 
@@ -121,6 +124,7 @@ async function demonstrateFinalCorrectSRAPIRequest() {
   console.log("✓ Direct arrays under 'week', 'day', '30min'");
   console.log("✓ Each bar has 't', 'o', 'h', 'l', 'c', 'v' properties");
   console.log("✓ Each bar has 'indicators' object with technical indicators");
+  console.log("✓ API key is now retrieved from environment variable");
   console.log();
 
   console.log("4. Sample Request Body (truncated):");
@@ -130,6 +134,7 @@ async function demonstrateFinalCorrectSRAPIRequest() {
   console.log("5. How this differs from my previous incorrect example:");
   console.log("❌ WRONG: bars.week.bars = [...]");
   console.log("✅ CORRECT: bars.week = [...]");
+  console.log("✅ SECURE: API key from environment variable");
   console.log();
 
   console.log("6. Making the actual request...\n");
@@ -139,7 +144,7 @@ async function demonstrateFinalCorrectSRAPIRequest() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": "default-api-key",
+        "X-API-Key": srApiKey,
       },
       body: JSON.stringify(payload),
     });
