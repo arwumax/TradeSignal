@@ -40,7 +40,11 @@ Deno.serve(async (req: Request) => {
     if (!symbol) {
       console.error("[FETCH-HISTORICAL-STORE] ❌ No symbol provided");
       return new Response(
-        JSON.stringify({ error: "Symbol is required" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Symbol is required",
+          details: "Please provide a valid stock symbol"
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -50,10 +54,34 @@ Deno.serve(async (req: Request) => {
 
     // Get API key from environment variables
     const historicalDataApiKey = Deno.env.get('HISTORICAL_DATA_API_KEY');
+    console.log(`[FETCH-HISTORICAL-STORE] 🔑 API Key check: ${historicalDataApiKey ? 'Present' : 'Missing'}`);
+    
     if (!historicalDataApiKey) {
       console.error("[FETCH-HISTORICAL-STORE] ❌ HISTORICAL_DATA_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: "Historical data API key not configured" }),
+        JSON.stringify({ 
+          success: false,
+          error: "Historical data API key not configured",
+          details: "The HISTORICAL_DATA_API_KEY environment variable is not set. Please configure it in your Supabase project secrets using: supabase secrets set HISTORICAL_DATA_API_KEY=your_actual_api_key_here"
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Check if API key is still a placeholder
+    if (historicalDataApiKey.includes('your_historical_data_api_key_here') || 
+        historicalDataApiKey.includes('your_api_key_here') ||
+        historicalDataApiKey === 'your_historical_data_api_key_here') {
+      console.error("[FETCH-HISTORICAL-STORE] ❌ HISTORICAL_DATA_API_KEY is still a placeholder");
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Historical data API key is not properly configured",
+          details: "The HISTORICAL_DATA_API_KEY appears to be a placeholder value. Please replace it with your actual API key from the historical data provider."
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -124,7 +152,33 @@ Deno.serve(async (req: Request) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[FETCH-HISTORICAL-STORE] ❌ API Error Response: ${errorText}`);
-      throw new Error(`Historical data API error: ${response.status} ${response.statusText} - ${errorText}`);
+      
+      // Provide more specific error messages based on status codes
+      let errorMessage = `Historical data API error: ${response.status} ${response.statusText}`;
+      let details = errorText;
+      
+      if (response.status === 401) {
+        errorMessage = "Invalid API key for historical data service";
+        details = "The provided HISTORICAL_DATA_API_KEY is not valid. Please check your API key and ensure it's correctly configured.";
+      } else if (response.status === 403) {
+        errorMessage = "Access forbidden to historical data service";
+        details = "Your API key may not have sufficient permissions or may have exceeded usage limits.";
+      } else if (response.status === 429) {
+        errorMessage = "Rate limit exceeded for historical data service";
+        details = "Too many requests have been made. Please wait before trying again.";
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: errorMessage,
+          details: details
+        }),
+        {
+          status: response.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const data = await response.json();
@@ -150,7 +204,17 @@ Deno.serve(async (req: Request) => {
 
     if (insertError) {
       console.error('[FETCH-HISTORICAL-STORE] ❌ Database error:', insertError);
-      throw new Error(`Failed to store historical data: ${insertError.message}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Failed to store historical data",
+          details: insertError.message
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     console.log(`[FETCH-HISTORICAL-STORE] ✅ Data stored successfully with ID: ${insertedData.id}`);
@@ -176,8 +240,9 @@ Deno.serve(async (req: Request) => {
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: "Failed to fetch and store historical data",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error occurred"
       }),
       {
         status: 500,

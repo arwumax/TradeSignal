@@ -161,7 +161,21 @@ export const useAnalysis = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[FRONTEND] ❌ Historical data error response:', errorText);
-        throw new Error(`Historical data fetch failed (${response.status}): ${errorText}`);
+        
+        // Try to parse the error response for better error handling
+        let errorDetails = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.details) {
+            throw new Error(`${errorJson.error}: ${errorJson.details}`);
+          } else if (errorJson.error) {
+            throw new Error(errorJson.error);
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, use the original error text
+        }
+        
+        throw new Error(`Historical data fetch failed (${response.status}): ${errorDetails}`);
       }
 
       const result = await response.json();
@@ -173,13 +187,15 @@ export const useAnalysis = () => {
       });
       
       if (!result.success) {
-        throw new Error(result.details || 'Failed to fetch historical data');
+        const errorMessage = result.details || result.error || 'Failed to fetch historical data';
+        throw new Error(errorMessage);
       }
       
       updateStepStatus('fetch_historical', 'completed');
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Fetch historical data error:', error);
+      updateStepStatus('fetch_historical', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -232,6 +248,7 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate trend analysis error:', error);
+      updateStepStatus('generate_trend', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -284,6 +301,7 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate S&R analysis error:', error);
+      updateStepStatus('generate_sr', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -336,6 +354,7 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate strategy analysis error:', error);
+      updateStepStatus('generate_strategy', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
@@ -510,6 +529,7 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Save analysis error:', error);
+      updateStepStatus('saving', 'error', error instanceof Error ? error.message : 'Unknown error');
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         throw new Error('Unable to connect to Supabase Edge Functions. Please verify your Supabase configuration and ensure the save-analysis function is deployed.');
