@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { AIProviderManager } from '../generate-strategy-analysis/ai-providers.ts';
+import { AIProviderManager } from './ai-providers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
