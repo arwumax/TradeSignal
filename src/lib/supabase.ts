@@ -12,9 +12,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with your actual Supabase project credentials.');
 }
 
+// Check for placeholder values first
+if (supabaseUrl.includes('your-project-id') || supabaseUrl.includes('your_supabase') || 
+    supabaseAnonKey.includes('your_supabase') || supabaseAnonKey.includes('your-supabase')) {
+  console.error('Placeholder values detected in environment variables.');
+  console.error('Please replace the placeholder values in your .env file with your actual Supabase project credentials.');
+  console.error('You can find these values in your Supabase project settings under "API".');
+  throw new Error('Please replace the placeholder values in your .env file with your actual Supabase project credentials. You can find these in your Supabase project settings under "API".');
+}
+
 // Validate URL format
 if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
   console.error('Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co');
+  console.error('Current value:', supabaseUrl);
   throw new Error('Invalid VITE_SUPABASE_URL format. Please check your Supabase project URL.');
 }
 
