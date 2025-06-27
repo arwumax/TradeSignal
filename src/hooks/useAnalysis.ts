@@ -49,6 +49,18 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 🔍 Checking for recent analysis for ${symbol} with trading hours logic`);
     
     try {
+      // Check if Supabase is properly configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      const isPlaceholderUrl = !supabaseUrl || supabaseUrl.includes('your_supabase_project_url_here');
+      const isPlaceholderKey = !supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here');
+      
+      if (isPlaceholderUrl || isPlaceholderKey) {
+        console.log('[FRONTEND] ⚠️ Supabase not configured - skipping cache check');
+        return null;
+      }
+      
       // Get current trading period information
       const currentTime = new Date();
       const tradingInfo = getETInfo(currentTime);
@@ -115,6 +127,14 @@ export const useAnalysis = () => {
       supabaseUrlFormat: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing'
     });
     
+    // Check for placeholder values first
+    const isPlaceholderUrl = !supabaseUrl || supabaseUrl.includes('your_supabase_project_url_here');
+    const isPlaceholderKey = !supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here');
+    
+    if (isPlaceholderUrl || isPlaceholderKey) {
+      throw new Error('Supabase is not configured. Please click the "Connect to Supabase" button in the top right corner or update your .env file with your actual Supabase project credentials. You can find these in your Supabase project settings under "API".');
+    }
+    
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set with your actual Supabase project credentials.');
     }
@@ -122,11 +142,6 @@ export const useAnalysis = () => {
     // Validate URL format
     if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
       throw new Error('Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co');
-    }
-
-    // Check for placeholder values
-    if (supabaseUrl.includes('your_supabase') || supabaseAnonKey.includes('your_supabase')) {
-      throw new Error('Please replace the placeholder values in your .env file with your actual Supabase project credentials. You can find these in your Supabase project settings under "API".');
     }
 
     return { supabaseUrl, supabaseAnonKey };
