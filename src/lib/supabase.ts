@@ -1,65 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:');
-  console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'Present' : 'Missing');
-  console.error('VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'Present' : 'Missing');
-  console.error('Please check your .env file and ensure both VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set with your actual Supabase project credentials.');
-  console.error('You can find these values in your Supabase project settings under "API".');
-  throw new Error('Missing Supabase environment variables. Please check your .env file and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with your actual Supabase project credentials.');
+// Check if we have placeholder values (development mode)
+const isPlaceholderUrl = !supabaseUrl || supabaseUrl.includes('your_supabase_project_url_here')
+const isPlaceholderKey = !supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here')
+
+if (isPlaceholderUrl || isPlaceholderKey) {
+  console.warn('⚠️  Supabase not configured - using placeholder values')
+  console.warn('To connect to Supabase:')
+  console.warn('1. Click "Connect to Supabase" button in the top right')
+  console.warn('2. Or manually update your .env file with actual Supabase credentials')
+  
+  // Create a mock client for development
+  export const supabase = createClient(
+    'https://placeholder.supabase.co',
+    'placeholder-anon-key'
+  )
+} else {
+  // Validate URL format for real credentials
+  const urlPattern = /^https:\/\/[a-zA-Z0-9-]+\.supabase\.co$/
+  if (!urlPattern.test(supabaseUrl)) {
+    throw new Error(`Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co\nCurrent value: ${supabaseUrl}`)
+  }
+
+  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 }
-
-// Validate URL format
-if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
-  console.error('Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co');
-  console.error('Current value:', supabaseUrl);
-  throw new Error('Invalid VITE_SUPABASE_URL format. Please check your Supabase project URL.');
-}
-
-// Validate anon key format (basic check)
-if (!supabaseAnonKey.startsWith('eyJ')) {
-  console.error('Invalid VITE_SUPABASE_ANON_KEY format. The anon key should start with "eyJ"');
-  throw new Error('Invalid VITE_SUPABASE_ANON_KEY format. Please check your Supabase anon key.');
-}
-
-console.log('Supabase configuration:');
-console.log('URL:', supabaseUrl);
-console.log('Anon Key:', `${supabaseAnonKey.substring(0, 20)}...`);
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export type Database = {
-  public: {
-    Tables: {
-      stock_analyses: {
-        Row: {
-          id: string;
-          symbol: string;
-          analysis_type: 'historical' | 'support_resistance' | 'combined' | 'trend_and_sr';
-          analysis_text: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          symbol: string;
-          analysis_type: 'historical' | 'support_resistance' | 'combined' | 'trend_and_sr';
-          analysis_text: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          symbol?: string;
-          analysis_type?: 'historical' | 'support_resistance' | 'combined' | 'trend_and_sr';
-          analysis_text?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
-  };
-};
