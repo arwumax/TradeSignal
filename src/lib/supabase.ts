@@ -7,6 +7,8 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 const isPlaceholderUrl = !supabaseUrl || supabaseUrl.includes('your_supabase_project_url_here')
 const isPlaceholderKey = !supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here')
 
+let supabase
+
 if (isPlaceholderUrl || isPlaceholderKey) {
   console.warn('⚠️  Supabase not configured - using placeholder values')
   console.warn('To connect to Supabase:')
@@ -14,7 +16,7 @@ if (isPlaceholderUrl || isPlaceholderKey) {
   console.warn('2. Or manually update your .env file with actual Supabase credentials')
   
   // Create a mock client for development
-  export const supabase = createClient(
+  supabase = createClient(
     'https://placeholder.supabase.co',
     'placeholder-anon-key'
   )
@@ -25,5 +27,7 @@ if (isPlaceholderUrl || isPlaceholderKey) {
     throw new Error(`Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co\nCurrent value: ${supabaseUrl}`)
   }
 
-  export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  supabase = createClient(supabaseUrl, supabaseAnonKey)
 }
+
+export { supabase }
