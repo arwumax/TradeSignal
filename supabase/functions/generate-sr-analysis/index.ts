@@ -106,6 +106,26 @@ Intraday Data: ${summary.thirtyMinBars} bars (30-minute intervals)
   `;
 };
 
+// Function to filter S&R levels data to include only symbol and timeframes.merged
+const filterSRLevelsForPrompt = (srLevels: any) => {
+  console.log('[GENERATE-SR-ANALYSIS] 🔍 Filtering S&R levels data for prompt...');
+  
+  const filteredData = {
+    symbol: srLevels.symbol,
+    timeframes: {
+      merged: srLevels.timeframes?.merged
+    }
+  };
+  
+  console.log('[GENERATE-SR-ANALYSIS] ✅ Filtered S&R data structure:', {
+    hasSymbol: !!filteredData.symbol,
+    hasMerged: !!filteredData.timeframes?.merged,
+    mergedLevelsCount: filteredData.timeframes?.merged?.significant_levels?.length || 0
+  });
+  
+  return filteredData;
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -157,18 +177,21 @@ Deno.serve(async (req: Request) => {
     const srLevels = await fetchSupportResistanceLevels(symbol, historicalData);
     console.log('[GENERATE-SR-ANALYSIS] ✅ S&R levels fetched successfully');
 
+    // Filter S&R levels to include only symbol and timeframes.merged
+    const filteredSRLevels = filterSRLevelsForPrompt(srLevels);
+
     // Create historical data summary
     const historicalDataSummary = createHistoricalDataSummary(historicalData);
 
-    // Format S&R levels for the prompt
-    const srLevelsText = JSON.stringify(srLevels, null, 2);
+    // Format filtered S&R levels for the prompt
+    const srLevelsText = JSON.stringify(filteredSRLevels, null, 2);
 
     // Prepare the S&R analysis prompt
     const srPrompt = SR_ANALYSIS_PROMPT
       .replace('{historical_data_summary}', historicalDataSummary)
       .replace('{support_resistance_levels}', srLevelsText);
 
-    console.log('[GENERATE-SR-ANALYSIS] 📊 Prompt prepared, length:', srPrompt.length);
+    console.log('[GENERATE-SR-ANALYSIS] 📊 Prompt prepared with filtered data, length:', srPrompt.length);
 
     // Generate S&R analysis using AI Provider Manager
     console.log('[GENERATE-SR-ANALYSIS] 🤖 Generating S&R analysis with AI providers...');
