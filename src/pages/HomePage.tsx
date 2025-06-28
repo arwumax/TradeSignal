@@ -117,10 +117,7 @@ export const HomePage: React.FC = () => {
                   <h1 className="text-hero font-heading font-light text-text-main">AI-Powered Stock Analysis</h1>
                 </div>
                 <p className="text-xl text-text-body mb-4 font-body">
-                  Transform complex market data into actionable trading insights with advanced AI
-                </p>
-                <p className="text-lg text-text-body opacity-80 font-body">
-                  Get comprehensive technical analysis, support & resistance levels, and trading strategies in seconds
+                  Transform complex market data into actionable trading insights with AI
                 </p>
               </div>
 
