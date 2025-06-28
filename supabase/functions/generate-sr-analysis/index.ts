@@ -7,23 +7,59 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const SR_ANALYSIS_PROMPT = `You are a professional technical analyst specializing in support and resistance levels. Using the historical stock data provided below, identify and analyze key support and resistance levels across multiple timeframes.
+const SR_ANALYSIS_PROMPT = `You are a professional stock trader, specializing in price action analysis.
+Below is a structured JSON containing only the symbol and merged timeframes data for analyzing support and resistance zones. 
 
-Historical Data Analysis:
-{historical_data_summary}
+Significant levels have been calculated, including: cluster_price, current_role, failed_breakouts, with_ema, etc.
+There is no need to calculate indicators manually. Use the provided fields only.
 
-Support & Resistance Levels:
-{support_resistance_levels}
+Please output the analysis according to the following criteria:
+1. Support/Resistance Zone Analysis
+Use the recent_close_price to determine current market position.
+Scoring rules for each cluster_price (from timeframes.merged):
+Base Score = number of tests
+with_ema: +1 if overlapping with any daily EMA or weekly EMA (from with_ema field)
+failed_breakouts: -1 if any failed_breakouts
 
-Please provide a comprehensive analysis that includes:
+2. Selection Rules (Based on how close the zone to recent_close_price and total Score: High → Low)
+Identify 2 strongest support zones below the recent_close_price:
+If timeframes.merged.significant_levels.challenging_direction is support, label as "Immediate Support".
+Identify 2 strongest resistance zones above the recent_close_price:
+If timeframes.merged.significant_levels.challenging_direction is resistance, label as "Immediate Resistance".
 
-1. **Key Support Levels**: Identify the most significant support levels with price ranges and strength indicators
-2. **Key Resistance Levels**: Identify the most significant resistance levels with price ranges and strength indicators  
-3. **Multi-Timeframe Analysis**: How these levels align across weekly, daily, and intraday timeframes
-4. **Volume Confirmation**: Areas where volume supports the significance of these levels
-5. **Trading Implications**: How traders can use these levels for entries, exits, and risk management
+Price Band: cluster_price
+Indicate the strength of the zone:
+Strong: ≥ 7 points
+Moderate: 3–6 points
+Weak: < 2 points (do not list)
+State resonant EMAs explicitly in your rationale (e.g., Week 20 EMA , Day 50 EMA), and mention the source timeframe.
 
-Format your response in clear sections with specific price levels and actionable insights. Use markdown formatting for better readability.`;
+Output Format Example(Write plain text, no tables, no emoji):
+
+## {symbol} {Name of Company} Support & Resistance Analysis
+
+### Support Zones:
+**S1 ~$500 (Strong | Moderate | Immediate Support)**
+Hugs the Week 20 EMA and Day 50 EMA
+Tested 6 times, last on 2025-06-18, all bounces held
+Formed by a prior swing-low that was broken on 2025-05-30 and has since flipped into support
+**S2 ~$510 (Moderate)**
+Sits just 1.8 % beneath current price, touched 3 times in June  
+Coincides with Day 100 EMA  
+
+Resistance Zones:
+**R1 $530 (Strong | Moderate | Immediate Resistance)**
+Marks the former swing-high of 2025-06-10, broken on 2025-06-24 and now acting as resistance
+Overlaps Week 50 EMA
+Saw one failed upside breakout on 2025-06-27
+**R2 $535 (Moderate)**
+Aligns with a gap-top from 2025-04-15, unfilled so far
+Price rejected twice in May, latest rejection 2025-06-12
+
+Write plain text in paragraphs or bullet points only — no tables, no emojis.
+
+Filtered S&R data:
+{support_resistance_levels}`;
 
 // Function to fetch support and resistance levels from external API
 const fetchSupportResistanceLevels = async (symbol: string, historicalData: any) => {
@@ -80,35 +116,6 @@ const fetchSupportResistanceLevels = async (symbol: string, historicalData: any)
     console.error('[GENERATE-SR-ANALYSIS] Error fetching S&R levels:', error);
     throw error;
   }
-};
-
-// Function to create historical data summary
-const createHistoricalDataSummary = (historicalData: any) => {
-  const data = historicalData.data || historicalData;
-  
-  const summary = {
-    weeklyBars: data.week?.bars?.length || 0,
-    dailyBars: data.day?.bars?.length || 0,
-    thirtyMinBars: data['30min']?.bars?.length || 0,
-    priceRange: {
-      weekly: data.week?.bars ? {
-        high: Math.max(...data.week.bars.map((bar: any) => bar.h)),
-        low: Math.min(...data.week.bars.map((bar: any) => bar.l)),
-        latest: data.week.bars[data.week.bars.length - 1]?.c
-      } : null,
-      daily: data.day?.bars ? {
-        high: Math.max(...data.day.bars.map((bar: any) => bar.h)),
-        low: Math.min(...data.day.bars.map((bar: any) => bar.l)),
-        latest: data.day.bars[data.day.bars.length - 1]?.c
-      } : null
-    }
-  };
-
-  return `
-Weekly Data: ${summary.weeklyBars} bars, Price Range: $${summary.priceRange.weekly?.low?.toFixed(2)} - $${summary.priceRange.weekly?.high?.toFixed(2)}, Current: $${summary.priceRange.weekly?.latest?.toFixed(2)}
-Daily Data: ${summary.dailyBars} bars, Price Range: $${summary.priceRange.daily?.low?.toFixed(2)} - $${summary.priceRange.daily?.high?.toFixed(2)}, Current: $${summary.priceRange.daily?.latest?.toFixed(2)}
-Intraday Data: ${summary.thirtyMinBars} bars (30-minute intervals)
-  `;
 };
 
 // Function to filter S&R levels data to include only symbol and timeframes.merged
@@ -185,15 +192,11 @@ Deno.serve(async (req: Request) => {
     // Filter S&R levels to include only symbol and timeframes.merged
     const filteredSRLevels = filterSRLevelsForPrompt(srLevels);
 
-    // Create historical data summary
-    const historicalDataSummary = createHistoricalDataSummary(historicalData);
-
     // Format filtered S&R levels for the prompt
     const srLevelsText = JSON.stringify(filteredSRLevels, null, 2);
 
-    // Prepare the S&R analysis prompt
+    // Prepare the S&R analysis prompt (removed historical_data_summary)
     const srPrompt = SR_ANALYSIS_PROMPT
-      .replace('{historical_data_summary}', historicalDataSummary)
       .replace('{support_resistance_levels}', srLevelsText);
 
     console.log('[GENERATE-SR-ANALYSIS] 📊 Prompt prepared with filtered data, length:', srPrompt.length);
