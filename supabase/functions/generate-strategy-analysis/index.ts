@@ -17,7 +17,7 @@ Support / Resistance Analysis
 
 Writing Requirements
 Align strategies with the trend
-Market is bullish: at least three long setups.
+Market is bullish or bearish: at least three long setups;
 If a counter-trend short is included, give a clear reversal trigger and a minimum reward-to-risk (R:R) of 3.
 
 For each strategy list, in order:
