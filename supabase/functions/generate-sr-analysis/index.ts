@@ -36,23 +36,28 @@ const fetchSupportResistanceLevels = async (symbol: string, historicalData: any)
     // Extract data from historical API response
     const data = historicalData.data || historicalData;
 
-    // Prepare the payload for stock-level-tracker API
+    // Prepare the payload for stock-level-tracker API with updated parameters
     const payload = {
       symbol: symbol,
       tolerance_pct: 0.3,
+      atr_multiplier: 0.3,
+      confirm_window: 4,
+      merge_timeframes: true,
       bars: {
         week: data.week?.bars || [],
-        day: data.day?.bars || [],
-        "30min": data['30min']?.bars || []
+        day: data.day?.bars || []
+        // Removed 30min timeframe as requested
       }
     };
 
     console.log(`[GENERATE-SR-ANALYSIS] S&R API Payload structure:`, {
       symbol: payload.symbol,
       tolerance_pct: payload.tolerance_pct,
+      atr_multiplier: payload.atr_multiplier,
+      confirm_window: payload.confirm_window,
+      merge_timeframes: payload.merge_timeframes,
       weekBarsCount: payload.bars.week.length,
-      dayBarsCount: payload.bars.day.length,
-      thirtyMinBarsCount: payload.bars["30min"].length
+      dayBarsCount: payload.bars.day.length
     });
 
     const response = await fetch("https://stock-level-tracker.replit.app/api/v1/analysis/levels", {
