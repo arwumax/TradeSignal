@@ -268,7 +268,7 @@ export const useAnalysis = () => {
     }
   };
 
-  // Step 3: Generate S&R analysis
+  // Step 3: Generate S&R analysis with enhanced error handling
   const generateSRAnalysis = async (symbol: string, historicalDataId: string): Promise<SRAnalysisResponse> => {
     console.log(`[FRONTEND] 🎯 Step 3: Generating S&R analysis for ${symbol}`);
     updateStepStatus('generate_sr', 'loading');
@@ -279,6 +279,10 @@ export const useAnalysis = () => {
     try {
       console.log('[FRONTEND] 📤 Calling generate-sr-analysis function:', functionUrl);
       
+      // Add timeout and better error handling for the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+      
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -286,7 +290,10 @@ export const useAnalysis = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ symbol, historicalDataId }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       console.log('[FRONTEND] 📡 S&R analysis response:', {
         status: response.status,
@@ -297,7 +304,19 @@ export const useAnalysis = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[FRONTEND] ❌ S&R analysis error response:', errorText);
-        throw new Error(`S&R analysis failed (${response.status}): ${errorText}`);
+        
+        // Enhanced error handling for specific HTTP status codes
+        if (response.status === 404) {
+          throw new Error('S&R analysis function not found. Please ensure the generate-sr-analysis Edge Function is deployed to your Supabase project.');
+        } else if (response.status === 401) {
+          throw new Error('Unauthorized access to S&R analysis function. Please check your Supabase API key.');
+        } else if (response.status === 403) {
+          throw new Error('Forbidden access to S&R analysis function. Please verify your Supabase project permissions.');
+        } else if (response.status >= 500) {
+          throw new Error(`S&R analysis server error (${response.status}). The function may be experiencing issues.`);
+        } else {
+          throw new Error(`S&R analysis failed (${response.status}): ${errorText}`);
+        }
       }
 
       const result = await response.json();
@@ -316,8 +335,21 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate S&R analysis error:', error);
-      updateStepStatus('generate_sr', 'error', error instanceof Error ? error.message : 'Unknown error');
-      throw error;
+      
+      // Enhanced error message for specific error types
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'S&R analysis request timed out. Please try again.';
+        } else if (error.message === 'Failed to fetch') {
+          errorMessage = 'Unable to connect to S&R analysis function. Please ensure the generate-sr-analysis Edge Function is deployed to your Supabase project and your internet connection is stable.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      updateStepStatus('generate_sr', 'error', errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -374,7 +406,7 @@ export const useAnalysis = () => {
     }
   };
 
-  // Main orchestration function
+  // Main orchestration function with improved error handling
   const generateAnalysis = async (symbol: string): Promise<AnalysisResponse> => {
     console.log(`[FRONTEND] 🚀 Starting comprehensive analysis generation for ${symbol}`);
     
@@ -416,15 +448,32 @@ export const useAnalysis = () => {
       // Step 2: Generate trend analysis
       const trendResult = await generateTrendAnalysis(symbol, historicalResult.historicalDataId!);
       
-      // Step 3: Generate S&R analysis (with error handling)
+      // Step 3: Generate S&R analysis with enhanced error handling
       let srResult: SRAnalysisResponse;
       try {
         srResult = await generateSRAnalysis(symbol, historicalResult.historicalDataId!);
       } catch (srError) {
         console.error('[FRONTEND] ❌ S&R analysis failed, using fallback:', srError);
+        
+        // Create a more informative fallback message
+        let fallbackMessage = 'Support & Resistance analysis could not be completed';
+        if (srError instanceof Error) {
+          if (srError.message.includes('not found') || srError.message.includes('deployed')) {
+            fallbackMessage += ' because the S&R analysis function is not deployed to your Supabase project. Please deploy the generate-sr-analysis Edge Function.';
+          } else if (srError.message.includes('timeout')) {
+            fallbackMessage += ' due to a timeout. Please try again later.';
+          } else if (srError.message.includes('connect')) {
+            fallbackMessage += ' due to connection issues. Please check your internet connection and try again.';
+          } else {
+            fallbackMessage += ` due to: ${srError.message}`;
+          }
+        } else {
+          fallbackMessage += ' due to technical difficulties. Please try again later.';
+        }
+        
         srResult = {
           success: true,
-          analysis: `\n\n## Support & Resistance Analysis\n\n*Support & Resistance analysis could not be completed due to ${srError instanceof Error ? srError.message : 'technical difficulties'}. Please try again later.*`,
+          analysis: `\n\n## Support & Resistance Analysis\n\n*${fallbackMessage}*`,
           symbol: symbol,
           analysisType: 'support_resistance'
         };
