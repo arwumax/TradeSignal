@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { StockSearch } from '../components/StockSearch';
 import { LoadingSteps } from '../components/LoadingSteps';
@@ -16,36 +16,6 @@ export const HomePage: React.FC = () => {
     generateAnalysis,
     saveAnalysis,
   } = useAnalysis();
-
-  // State for scroll animations
-  const [visibleCards, setVisibleCards] = useState<boolean[]>([false, false, false]);
-
-  // Intersection Observer for scroll animations
-  useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const cardIndex = parseInt(entry.target.getAttribute('data-card-index') || '0');
-          setVisibleCards(prev => {
-            const newVisible = [...prev];
-            newVisible[cardIndex] = true;
-            return newVisible;
-          });
-        }
-      });
-    }, observerOptions);
-
-    // Observe all info cards
-    const cards = document.querySelectorAll('[data-card-index]');
-    cards.forEach(card => observer.observe(card));
-
-    return () => observer.disconnect();
-  }, [isAnalyzing]);
 
   const handleSearch = async (symbol: string) => {
     console.log(`[HOMEPAGE] 🎯 Starting analysis for symbol: ${symbol}`);
@@ -141,20 +111,20 @@ export const HomePage: React.FC = () => {
         <div className="relative z-10 w-full max-w-4xl text-center">
           {!isAnalyzing ? (
             <>
-              {/* Tagline and Value Proposition */}
+              {/* Enhanced Hero Content */}
               <div className="mb-12">
-                <h1 className="text-hero font-heading font-bold text-text-main mb-4 max-w-tagline mx-auto">
-                  AI-Powered Stock Analysis
-                </h1>
+                <div className="flex items-center justify-center mb-6">
+                  <h1 className="text-hero font-heading font-light text-text-main">AI-Powered Stock Analysis</h1>
+                </div>
                 <p className="text-xl text-text-body mb-4 font-body">
-                  Transform complex market data into actionable trading insights with AI
+                  Transform complex market data into actionable trading insights with advanced AI
                 </p>
                 <p className="text-lg text-text-body opacity-80 font-body">
                   Get comprehensive technical analysis, support & resistance levels, and trading strategies in seconds
                 </p>
               </div>
 
-              {/* Enhanced Stock Search Component */}
+              {/* Stock Search Component */}
               <div className="w-full max-w-search mx-auto">
                 <div className="relative">
                   <div className="bg-elevated rounded-search shadow-search p-2">
@@ -169,110 +139,252 @@ export const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Info Cards Section - Only show when not analyzing */}
+      {/* Content Sections - Only show when not analyzing */}
       {!isAnalyzing && (
-        <section className="py-16 px-responsive">
-          <div className="max-w-6xl mx-auto">
-            {/* Section Header */}
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-heading font-bold text-text-main mb-4">
-                Why Choose AI-Powered Analysis?
-              </h2>
-              <div className="w-24 h-px bg-line mx-auto"></div>
-            </div>
-
-            {/* Info Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Card 1: Speed & Efficiency */}
-              <div 
-                data-card-index="0"
-                className={`bg-elevated rounded-card shadow-card p-6 hover:shadow-card-hover hover:-translate-y-1 hover:scale-[1.02] transition-all duration-fast transform ${
-                  visibleCards[0] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-                }`}
-                style={{ transitionDelay: '0ms' }}
-              >
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-50 rounded-full mb-4 mx-auto">
-                  <Clock className="h-6 w-6 text-brand" />
+        <>
+          {/* Section 1: The Problem */}
+          <section className="py-16 bg-elevated">
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-heading font-bold text-text-main mb-8">The Challenge of Technical Analysis</h2>
+                <div className="grid md:grid-cols-2 gap-8 mb-12">
+                  <div className="bg-main p-6 rounded-card border border-line">
+                    <Clock className="h-8 w-8 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-heading font-semibold text-text-main mb-3">Time-Consuming Process</h3>
+                    <p className="text-text-body font-body">
+                      Manual technical analysis requires hours of chart study, indicator calculation, and pattern recognition across multiple timeframes.
+                    </p>
+                  </div>
+                  <div className="bg-main p-6 rounded-card border border-line">
+                    <Brain className="h-8 w-8 text-red-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-heading font-semibold text-text-main mb-3">Complex Expertise Required</h3>
+                    <p className="text-text-body font-body">
+                      Understanding market trends, support/resistance levels, and technical indicators demands years of experience and deep market knowledge.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-heading font-semibold text-text-main mb-3 text-center">
-                  Lightning Fast Analysis
-                </h3>
-                <p className="text-text-body font-body text-center leading-relaxed">
-                  Get comprehensive technical analysis in under a minute instead of spending hours on manual chart study and indicator calculations.
-                </p>
-              </div>
-
-              {/* Card 2: Objective Insights */}
-              <div 
-                data-card-index="1"
-                className={`bg-elevated rounded-card shadow-card p-6 hover:shadow-card-hover hover:-translate-y-1 hover:scale-[1.02] transition-all duration-fast transform ${
-                  visibleCards[1] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-                }`}
-                style={{ transitionDelay: '100ms' }}
-              >
-                <div className="flex items-center justify-center w-12 h-12 bg-green-50 rounded-full mb-4 mx-auto">
-                  <Brain className="h-6 w-6 text-brand" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-text-main mb-3 text-center">
-                  Objective Insights
-                </h3>
-                <p className="text-text-body font-body text-center leading-relaxed">
-                  Remove emotional bias and human error with purely data-driven analysis and AI-powered recommendations based on market patterns.
-                </p>
-              </div>
-
-              {/* Card 3: Professional Grade */}
-              <div 
-                data-card-index="2"
-                className={`bg-elevated rounded-card shadow-card p-6 hover:shadow-card-hover hover:-translate-y-1 hover:scale-[1.02] transition-all duration-fast transform ${
-                  visibleCards[2] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-                }`}
-                style={{ transitionDelay: '200ms' }}
-              >
-                <div className="flex items-center justify-center w-12 h-12 bg-purple-50 rounded-full mb-4 mx-auto">
-                  <Target className="h-6 w-6 text-brand" />
-                </div>
-                <h3 className="text-xl font-heading font-semibold text-text-main mb-3 text-center">
-                  Professional Grade
-                </h3>
-                <p className="text-text-body font-body text-center leading-relaxed">
-                  Receive institutional-quality analysis with precise entry points, targets, and risk management strategies tailored to current market conditions.
+                <p className="text-lg text-text-body leading-relaxed font-body">
+                  Traditional analysis is prone to human error, emotional bias, and information overload. 
+                  Traders often miss critical signals or make decisions based on incomplete data, leading to suboptimal trading outcomes.
                 </p>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
 
-      {/* Call to Action Section - Only show when not analyzing */}
-      {!isAnalyzing && (
-        <section className="py-16 px-responsive">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="bg-elevated rounded-card shadow-card p-8 border border-line">
-              <h2 className="text-2xl font-heading font-bold text-text-main mb-4">
-                Ready to Transform Your Trading?
-              </h2>
-              <p className="text-lg text-text-body font-body mb-6 leading-relaxed">
-                Join thousands of traders who are already using AI-powered analysis to make smarter, more profitable trading decisions. 
-                Get started in seconds with any stock symbol.
-              </p>
-              <div className="flex items-center justify-center space-x-6 text-sm text-text-body opacity-75">
-                <span className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  No registration required
-                </span>
-                <span className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  Instant results
-                </span>
-                <span className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  Professional-grade analysis
-                </span>
+          {/* Section 2: Why it Matters */}
+          <section className="py-16 bg-main">
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-heading font-bold text-text-main mb-8">Why Accurate Analysis is Crucial</h2>
+                <div className="grid md:grid-cols-3 gap-6 mb-12">
+                  <div className="bg-elevated p-6 rounded-card shadow-card border border-line">
+                    <Target className="h-8 w-8 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Better Entry & Exit Points</h3>
+                    <p className="text-text-body font-body">
+                      Precise analysis helps identify optimal timing for trades, maximizing profits and minimizing losses.
+                    </p>
+                  </div>
+                  <div className="bg-elevated p-6 rounded-card shadow-card border border-line">
+                    <Shield className="h-8 w-8 text-brand mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Risk Management</h3>
+                    <p className="text-text-body font-body">
+                      Understanding support and resistance levels enables better stop-loss placement and position sizing.
+                    </p>
+                  </div>
+                  <div className="bg-elevated p-6 rounded-card shadow-card border border-line">
+                    <BarChart3 className="h-8 w-8 text-purple-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Consistent Performance</h3>
+                    <p className="text-text-body font-body">
+                      Objective analysis removes emotional decision-making, leading to more consistent trading results.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-lg text-text-body leading-relaxed font-body">
+                  In today's fast-moving markets, the difference between profit and loss often comes down to the quality and speed of your analysis. 
+                  Missing key signals or misinterpreting market conditions can result in significant financial losses and missed opportunities.
+                </p>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+
+          {/* Section 3: Our Solution */}
+          <section className="py-16 bg-elevated">
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-heading font-bold text-text-main mb-8">Introducing AI-Powered Stock Analysis</h2>
+                <div 
+                  className="p-8 rounded-card mb-8 border border-line"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--accent-1), var(--accent-2))',
+                    opacity: 0.8
+                  }}
+                >
+                  <Zap className="h-12 w-12 text-brand mx-auto mb-4" />
+                  <h3 className="text-2xl font-heading font-semibold text-text-main mb-4">Your AI Trading Assistant</h3>
+                  <p className="text-lg text-text-body leading-relaxed font-body">
+                    Our advanced AI system processes vast amounts of market data in seconds, delivering comprehensive technical analysis 
+                    that would take hours to complete manually. Get objective, data-driven insights without the emotional bias that 
+                    often clouds human judgment.
+                  </p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="text-left">
+                    <h4 className="text-xl font-heading font-semibold text-text-main mb-3">Instant Analysis</h4>
+                    <p className="text-text-body font-body">
+                      What takes professional analysts hours to complete, our AI delivers in under a minute with greater accuracy and consistency.
+                    </p>
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xl font-heading font-semibold text-text-main mb-3">Objective Insights</h4>
+                    <p className="text-text-body font-body">
+                      Remove emotional bias and human error from your trading decisions with purely data-driven analysis and recommendations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: How It Works */}
+          <section className="py-16 bg-main">
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-3xl font-heading font-bold text-text-main text-center mb-12">How It Works: Your AI Trading Assistant</h2>
+                <div className="space-y-8">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-12 h-12 bg-brand text-white rounded-full flex items-center justify-center font-heading font-bold text-lg mr-6">
+                      1
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-heading font-semibold text-text-main mb-3">Fetch Comprehensive Historical Data</h3>
+                      <p className="text-text-body leading-relaxed font-body">
+                        Our system gathers extensive historical stock data across multiple timeframes (weekly, daily, 30-minute) 
+                        including OHLCV data and technical indicators like EMA, RSI, MACD, and ADX for thorough analysis.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center font-heading font-bold text-lg mr-6">
+                      2
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-heading font-semibold text-text-main mb-3">AI-Driven Trend Analysis</h3>
+                      <p className="text-text-body leading-relaxed font-body">
+                        Advanced AI algorithms analyze market trends across different timeframes, identifying bullish, bearish, 
+                        or neutral patterns while considering momentum indicators and moving average relationships.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-12 h-12 bg-purple-600 text-white rounded-full flex items-center justify-center font-heading font-bold text-lg mr-6">
+                      3
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-heading font-semibold text-text-main mb-3">Support & Resistance Identification</h3>
+                      <p className="text-text-body leading-relaxed font-body">
+                        Our AI pinpoints critical support and resistance levels by analyzing price action, volume patterns, 
+                        and historical turning points to identify key zones where price is likely to react.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-12 h-12 bg-orange-600 text-white rounded-full flex items-center justify-center font-heading font-bold text-lg mr-6">
+                      4
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-heading font-semibold text-text-main mb-3">Actionable Strategy Generation</h3>
+                      <p className="text-text-body leading-relaxed font-body">
+                        Based on the trend and support/resistance analysis, our AI generates specific trading strategies 
+                        with entry points, profit targets, stop-loss levels, and risk-reward ratios tailored to current market conditions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 5: Key Benefits */}
+          <section className="py-16 bg-elevated">
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-heading font-bold text-text-main mb-12">Unlock Smarter Trading Decisions</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="bg-blue-50 p-6 rounded-card border border-line">
+                    <Clock className="h-8 w-8 text-brand mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Save Hours of Analysis</h3>
+                    <p className="text-text-body font-body">
+                      Get comprehensive analysis in under a minute instead of spending hours on manual chart study.
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-6 rounded-card border border-line">
+                    <Brain className="h-8 w-8 text-green-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Objective Insights</h3>
+                    <p className="text-text-body font-body">
+                      Remove emotional bias and human error with purely data-driven analysis and recommendations.
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-6 rounded-card border border-line">
+                    <Shield className="h-8 w-8 text-purple-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Better Risk Management</h3>
+                    <p className="text-text-body font-body">
+                      Precise support/resistance levels help you place better stop-losses and manage position sizes.
+                    </p>
+                  </div>
+                  <div className="bg-orange-50 p-6 rounded-card border border-line">
+                    <BarChart3 className="h-8 w-8 text-orange-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Comprehensive Reports</h3>
+                    <p className="text-text-body font-body">
+                      Get detailed analysis covering trends, key levels, and specific trading strategies in one report.
+                    </p>
+                  </div>
+                  <div className="bg-indigo-50 p-6 rounded-card border border-line">
+                    <Target className="h-8 w-8 text-indigo-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Actionable Strategies</h3>
+                    <p className="text-text-body font-body">
+                      Receive specific entry points, targets, and stop-losses rather than vague market commentary.
+                    </p>
+                  </div>
+                  <div className="bg-teal-50 p-6 rounded-card border border-line">
+                    <Zap className="h-8 w-8 text-teal-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-heading font-semibold text-text-main mb-3">Easy to Use</h3>
+                    <p className="text-text-body font-body">
+                      Simply enter a stock symbol and get professional-grade analysis without any technical expertise required.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Call to Action */}
+          <section className="py-16" style={{
+            background: 'linear-gradient(135deg, var(--brand), #2563eb)'
+          }}>
+            <div className="container mx-auto px-responsive">
+              <div className="max-w-3xl mx-auto text-center text-white">
+                <h2 className="text-3xl font-heading font-bold mb-6">Ready to Transform Your Trading?</h2>
+                <p className="text-xl mb-8 opacity-90 font-body">
+                  Join thousands of traders who are already using AI-powered analysis to make smarter, more profitable trading decisions. 
+                  Get started in seconds with any stock symbol.
+                </p>
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-card p-6">
+                  <p className="text-lg mb-4 font-body">
+                    Enter any stock symbol in the search bar above to get your first comprehensive AI analysis
+                  </p>
+                  <div className="flex items-center justify-center space-x-4 text-sm opacity-75">
+                    <span>✓ No registration required</span>
+                    <span>✓ Instant results</span>
+                    <span>✓ Professional-grade analysis</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
       )}
 
       {/* Bolt.new logo in bottom right corner */}
