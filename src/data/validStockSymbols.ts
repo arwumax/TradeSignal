@@ -6,9 +6,7 @@ export const VALID_STOCK_SYMBOLS = new Set([
 // Popular stock symbols for quick access
 export const POPULAR_SYMBOLS = [
   'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX',
-  'AMD', 'INTC', 'ORCL', 'CRM', 'ADBE', 'PYPL', 'UBER', 'LYFT',
-  'SPOT', 'ZOOM', 'DOCU', 'SHOP', 'SQ', 'ROKU', 'TWTR', 'SNAP',
-  'PINS', 'ZM', 'PLTR', 'COIN', 'HOOD', 'RBLX', 'RIVN', 'LCID'
+  'AMD', 'INTC', 'ORCL', 'CRM','PLTR', 'COIN', 'HOOD', 'RBLX'
 ];
 
 export const validateStockSymbol = (symbol: string): boolean => {
