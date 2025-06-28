@@ -82,7 +82,7 @@ export const HomePage: React.FC = () => {
       <div className="relative z-20 flex items-center justify-between px-responsive py-4">
         <div className="flex items-center">
           <img 
-            src="/未命名設計 (5).png" 
+            src="/tradesignal-logo.png" 
             alt="TradeSignal Logo" 
             className="h-8 w-auto"
           />
