@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color Palette */
+    --bg-main: #F5F7F9;
+    --bg-elevated: #FFFFFF;
+    --line: #E1E4E8;
+    --accent-1: #C7D2DB;
+    --accent-2: #EAEFF3;
+    --text-main: #1A1D1F;
+    --text-body: #2E3439;
+    --brand: #3A7AFE;
+  }
+
+  body {
+    font-family: 'Merriweather', serif;
+    line-height: 1.4;
+    color: var(--text-body);
+    background-color: var(--bg-main);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.2;
+    color: var(--text-main);
+  }
+
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

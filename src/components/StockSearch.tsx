@@ -54,9 +54,9 @@ export const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading = 
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative">
+        <div className="relative flex items-center">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
@@ -66,18 +66,19 @@ export const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading = 
             value={symbol}
             onChange={handleInputChange}
             placeholder="Enter Stock Symbol"
-            className={`w-full pl-12 pr-4 py-4 text-lg border-2 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-              error ? 'border-red-300' : 'border-gray-300 hover:border-gray-400'
+            className={`flex-1 pl-12 pr-32 py-3 text-lg border-0 rounded-search focus:outline-none focus:ring-2 focus:ring-brand transition-all duration-fast ${
+              error ? 'ring-2 ring-red-300' : ''
             }`}
             disabled={isLoading}
             maxLength={5}
+            style={{ height: '56px' }}
           />
           
           <button
             type="button"
             onClick={handleAnalyzeClick}
             disabled={isLoading || !symbol.trim()}
-            className="absolute right-2 top-2 bottom-2 px-6 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            className="absolute right-2 top-2 bottom-2 px-6 bg-brand text-white rounded-search hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-fast font-heading font-semibold"
           >
             {isLoading ? (
               <div className="flex items-center">
@@ -91,18 +92,18 @@ export const StockSearch: React.FC<StockSearchProps> = ({ onSearch, isLoading = 
         </div>
         
         {error && (
-          <p className="mt-3 text-sm text-red-600 text-center">{error}</p>
+          <p className="mt-3 text-sm text-red-600 text-center font-body">{error}</p>
         )}
       </form>
 
       <div className="mt-8 text-center">
-        <p className="text-sm text-gray-500 mb-2">Popular symbols:</p>
+        <p className="text-sm text-text-body mb-3 font-body opacity-75">Popular symbols:</p>
         <div className="flex flex-wrap justify-center gap-2">
           {POPULAR_SYMBOLS.map((popularSymbol) => (
             <button
               key={popularSymbol}
               onClick={() => handlePopularSymbolClick(popularSymbol)}
-              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm bg-elevated text-text-body rounded-full hover:bg-gray-100 transition-colors duration-fast disabled:opacity-50 disabled:cursor-not-allowed border border-line font-body"
               disabled={isLoading}
             >
               {popularSymbol}
