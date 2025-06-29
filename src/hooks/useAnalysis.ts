@@ -116,7 +116,7 @@ export const useAnalysis = () => {
     }
   };
 
-  // Validate environment variables
+  // Validate environment variables with enhanced error messages
   const validateEnvironment = () => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -132,16 +132,43 @@ export const useAnalysis = () => {
     const isPlaceholderKey = !supabaseAnonKey || supabaseAnonKey.includes('your_supabase_anon_key_here');
     
     if (isPlaceholderUrl || isPlaceholderKey) {
-      throw new Error('Supabase is not configured. Please click the "Connect to Supabase" button in the top right corner or update your .env file with your actual Supabase project credentials. You can find these in your Supabase project settings under "API".');
+      throw new Error(`🔧 Supabase Configuration Required
+
+To use this application, you need to configure your Supabase credentials:
+
+1. 📋 Click the "Connect to Supabase" button in the top right corner
+   OR
+2. 🔑 Manually update your .env file with your actual Supabase credentials:
+   - Go to your Supabase project dashboard
+   - Navigate to Project Settings → API
+   - Copy your Project URL and anon/public key
+   - Update VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file
+
+3. 🔄 Restart the development server after updating the .env file
+
+Current status:
+- VITE_SUPABASE_URL: ${isPlaceholderUrl ? '❌ Not configured (placeholder value)' : '✅ Configured'}
+- VITE_SUPABASE_ANON_KEY: ${isPlaceholderKey ? '❌ Not configured (placeholder value)' : '✅ Configured'}`);
     }
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set with your actual Supabase project credentials.');
+      throw new Error(`🔧 Missing Supabase Environment Variables
+
+Please check your .env file and ensure both variables are set:
+- VITE_SUPABASE_URL: ${supabaseUrl ? '✅ Present' : '❌ Missing'}
+- VITE_SUPABASE_ANON_KEY: ${supabaseAnonKey ? '✅ Present' : '❌ Missing'}
+
+You can find these values in your Supabase project settings under "API".`);
     }
 
     // Validate URL format
     if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
-      throw new Error('Invalid VITE_SUPABASE_URL format. Expected format: https://your-project-id.supabase.co');
+      throw new Error(`🔧 Invalid Supabase URL Format
+
+Expected format: https://your-project-id.supabase.co
+Current value: ${supabaseUrl}
+
+Please check your VITE_SUPABASE_URL in the .env file.`);
     }
 
     return { supabaseUrl, supabaseAnonKey };
@@ -152,10 +179,10 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 📊 Step 1: Fetching historical data for ${symbol}`);
     updateStepStatus('fetch_historical', 'loading');
     
-    const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
-    const functionUrl = `${supabaseUrl}/functions/v1/fetch-historical-data-and-store`;
-    
     try {
+      const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
+      const functionUrl = `${supabaseUrl}/functions/v1/fetch-historical-data-and-store`;
+      
       console.log('[FRONTEND] 📤 Calling fetch-historical-data-and-store function:', functionUrl);
       
       const response = await fetch(functionUrl, {
@@ -177,6 +204,17 @@ export const useAnalysis = () => {
         const errorText = await response.text();
         console.error('[FRONTEND] ❌ Historical data error response:', errorText);
         
+        // Enhanced error handling for specific HTTP status codes
+        if (response.status === 404) {
+          throw new Error('📡 Edge Function Not Found\n\nThe fetch-historical-data-and-store function is not deployed to your Supabase project. Please ensure all Edge Functions are properly deployed.');
+        } else if (response.status === 401) {
+          throw new Error('🔐 Authentication Failed\n\nYour Supabase API key appears to be invalid. Please check your VITE_SUPABASE_ANON_KEY in the .env file.');
+        } else if (response.status === 403) {
+          throw new Error('🚫 Access Forbidden\n\nPlease verify your Supabase project permissions and API key configuration.');
+        } else if (response.status >= 500) {
+          throw new Error(`🔧 Server Error (${response.status})\n\nThe Supabase Edge Function is experiencing issues. Please try again later.`);
+        }
+        
         // Try to parse the error response for better error handling
         let errorDetails = errorText;
         try {
@@ -190,7 +228,7 @@ export const useAnalysis = () => {
           // If JSON parsing fails, use the original error text
         }
         
-        throw new Error(`Historical data fetch failed (${response.status}): ${errorDetails}`);
+        throw new Error(`📡 Historical Data Fetch Failed (${response.status})\n\n${errorDetails}`);
       }
 
       const result = await response.json();
@@ -210,6 +248,30 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Fetch historical data error:', error);
+      
+      // Enhanced error handling for network issues
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        const enhancedError = new Error(`🌐 Connection Failed
+
+Unable to connect to Supabase Edge Functions. This could be due to:
+
+1. 🔧 Supabase Configuration Issues:
+   - Check your .env file for correct VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   - Ensure your Supabase project is active and accessible
+
+2. 📡 Edge Function Deployment:
+   - Verify that the fetch-historical-data-and-store function is deployed to your Supabase project
+   - Check your Supabase dashboard for function deployment status
+
+3. 🌐 Network Issues:
+   - Check your internet connection
+   - Try refreshing the page
+
+Please verify your Supabase configuration and try again.`);
+        updateStepStatus('fetch_historical', 'error', enhancedError.message);
+        throw enhancedError;
+      }
+      
       updateStepStatus('fetch_historical', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
@@ -220,10 +282,10 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 📈 Step 2: Generating trend analysis for ${symbol}`);
     updateStepStatus('generate_trend', 'loading');
     
-    const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
-    const functionUrl = `${supabaseUrl}/functions/v1/generate-trend-analysis`;
-    
     try {
+      const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
+      const functionUrl = `${supabaseUrl}/functions/v1/generate-trend-analysis`;
+      
       console.log('[FRONTEND] 📤 Calling generate-trend-analysis function:', functionUrl);
       
       const response = await fetch(functionUrl, {
@@ -244,7 +306,18 @@ export const useAnalysis = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[FRONTEND] ❌ Trend analysis error response:', errorText);
-        throw new Error(`Trend analysis failed (${response.status}): ${errorText}`);
+        
+        if (response.status === 404) {
+          throw new Error('📡 Edge Function Not Found\n\nThe generate-trend-analysis function is not deployed to your Supabase project. Please ensure all Edge Functions are properly deployed.');
+        } else if (response.status === 401) {
+          throw new Error('🔐 Authentication Failed\n\nYour Supabase API key appears to be invalid. Please check your VITE_SUPABASE_ANON_KEY in the .env file.');
+        } else if (response.status === 403) {
+          throw new Error('🚫 Access Forbidden\n\nPlease verify your Supabase project permissions and API key configuration.');
+        } else if (response.status >= 500) {
+          throw new Error(`🔧 Server Error (${response.status})\n\nThe Supabase Edge Function is experiencing issues. Please try again later.`);
+        }
+        
+        throw new Error(`📈 Trend Analysis Failed (${response.status})\n\n${errorText}`);
       }
 
       const result = await response.json();
@@ -263,6 +336,30 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate trend analysis error:', error);
+      
+      // Enhanced error handling for network issues
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        const enhancedError = new Error(`🌐 Connection Failed
+
+Unable to connect to the trend analysis function. This could be due to:
+
+1. 🔧 Supabase Configuration Issues:
+   - Check your .env file for correct VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   - Ensure your Supabase project is active and accessible
+
+2. 📡 Edge Function Deployment:
+   - Verify that the generate-trend-analysis function is deployed to your Supabase project
+   - Check your Supabase dashboard for function deployment status
+
+3. 🌐 Network Issues:
+   - Check your internet connection
+   - Try refreshing the page
+
+Please verify your Supabase configuration and try again.`);
+        updateStepStatus('generate_trend', 'error', enhancedError.message);
+        throw enhancedError;
+      }
+      
       updateStepStatus('generate_trend', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
@@ -273,10 +370,10 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 🎯 Step 3: Generating S&R analysis for ${symbol}`);
     updateStepStatus('generate_sr', 'loading');
     
-    const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
-    const functionUrl = `${supabaseUrl}/functions/v1/generate-sr-analysis`;
-    
     try {
+      const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
+      const functionUrl = `${supabaseUrl}/functions/v1/generate-sr-analysis`;
+      
       console.log('[FRONTEND] 📤 Calling generate-sr-analysis function:', functionUrl);
       
       // Add timeout and better error handling for the fetch request
@@ -307,15 +404,15 @@ export const useAnalysis = () => {
         
         // Enhanced error handling for specific HTTP status codes
         if (response.status === 404) {
-          throw new Error('S&R analysis function not found. Please ensure the generate-sr-analysis Edge Function is deployed to your Supabase project.');
+          throw new Error('📡 Edge Function Not Found\n\nThe generate-sr-analysis function is not deployed to your Supabase project. Please ensure all Edge Functions are properly deployed.');
         } else if (response.status === 401) {
-          throw new Error('Unauthorized access to S&R analysis function. Please check your Supabase API key.');
+          throw new Error('🔐 Authentication Failed\n\nYour Supabase API key appears to be invalid. Please check your VITE_SUPABASE_ANON_KEY in the .env file.');
         } else if (response.status === 403) {
-          throw new Error('Forbidden access to S&R analysis function. Please verify your Supabase project permissions.');
+          throw new Error('🚫 Access Forbidden\n\nPlease verify your Supabase project permissions and API key configuration.');
         } else if (response.status >= 500) {
-          throw new Error(`S&R analysis server error (${response.status}). The function may be experiencing issues.`);
+          throw new Error(`🔧 Server Error (${response.status})\n\nThe Supabase Edge Function is experiencing issues. Please try again later.`);
         } else {
-          throw new Error(`S&R analysis failed (${response.status}): ${errorText}`);
+          throw new Error(`🎯 S&R Analysis Failed (${response.status})\n\n${errorText}`);
         }
       }
 
@@ -340,9 +437,25 @@ export const useAnalysis = () => {
       let errorMessage = 'Unknown error';
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errorMessage = 'S&R analysis request timed out. Please try again.';
+          errorMessage = '⏱️ Request Timeout\n\nThe S&R analysis request timed out. Please try again.';
         } else if (error.message === 'Failed to fetch') {
-          errorMessage = 'Unable to connect to S&R analysis function. Please ensure the generate-sr-analysis Edge Function is deployed to your Supabase project and your internet connection is stable.';
+          errorMessage = `🌐 Connection Failed
+
+Unable to connect to the S&R analysis function. This could be due to:
+
+1. 🔧 Supabase Configuration Issues:
+   - Check your .env file for correct VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   - Ensure your Supabase project is active and accessible
+
+2. 📡 Edge Function Deployment:
+   - Verify that the generate-sr-analysis function is deployed to your Supabase project
+   - Check your Supabase dashboard for function deployment status
+
+3. 🌐 Network Issues:
+   - Check your internet connection
+   - Try refreshing the page
+
+Please verify your Supabase configuration and try again.`;
         } else {
           errorMessage = error.message;
         }
@@ -358,10 +471,10 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 🎯 Step 4: Generating strategy analysis for ${symbol}`);
     updateStepStatus('generate_strategy', 'loading');
     
-    const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
-    const functionUrl = `${supabaseUrl}/functions/v1/generate-strategy-analysis`;
-    
     try {
+      const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
+      const functionUrl = `${supabaseUrl}/functions/v1/generate-strategy-analysis`;
+      
       console.log('[FRONTEND] 📤 Calling generate-strategy-analysis function:', functionUrl);
       
       const response = await fetch(functionUrl, {
@@ -382,7 +495,18 @@ export const useAnalysis = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[FRONTEND] ❌ Strategy analysis error response:', errorText);
-        throw new Error(`Strategy analysis failed (${response.status}): ${errorText}`);
+        
+        if (response.status === 404) {
+          throw new Error('📡 Edge Function Not Found\n\nThe generate-strategy-analysis function is not deployed to your Supabase project. Please ensure all Edge Functions are properly deployed.');
+        } else if (response.status === 401) {
+          throw new Error('🔐 Authentication Failed\n\nYour Supabase API key appears to be invalid. Please check your VITE_SUPABASE_ANON_KEY in the .env file.');
+        } else if (response.status === 403) {
+          throw new Error('🚫 Access Forbidden\n\nPlease verify your Supabase project permissions and API key configuration.');
+        } else if (response.status >= 500) {
+          throw new Error(`🔧 Server Error (${response.status})\n\nThe Supabase Edge Function is experiencing issues. Please try again later.`);
+        }
+        
+        throw new Error(`🎯 Strategy Analysis Failed (${response.status})\n\n${errorText}`);
       }
 
       const result = await response.json();
@@ -401,6 +525,30 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Generate strategy analysis error:', error);
+      
+      // Enhanced error handling for network issues
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        const enhancedError = new Error(`🌐 Connection Failed
+
+Unable to connect to the strategy analysis function. This could be due to:
+
+1. 🔧 Supabase Configuration Issues:
+   - Check your .env file for correct VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   - Ensure your Supabase project is active and accessible
+
+2. 📡 Edge Function Deployment:
+   - Verify that the generate-strategy-analysis function is deployed to your Supabase project
+   - Check your Supabase dashboard for function deployment status
+
+3. 🌐 Network Issues:
+   - Check your internet connection
+   - Try refreshing the page
+
+Please verify your Supabase configuration and try again.`);
+        updateStepStatus('generate_strategy', 'error', enhancedError.message);
+        throw enhancedError;
+      }
+      
       updateStepStatus('generate_strategy', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
@@ -528,10 +676,10 @@ export const useAnalysis = () => {
     console.log(`[FRONTEND] 💾 Starting save analysis for ${symbol}`);
     updateStepStatus('saving', 'loading');
     
-    const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
-    const functionUrl = `${supabaseUrl}/functions/v1/save-analysis`;
-    
     try {
+      const { supabaseUrl, supabaseAnonKey } = validateEnvironment();
+      const functionUrl = `${supabaseUrl}/functions/v1/save-analysis`;
+      
       console.log('[FRONTEND] 📤 Calling save-analysis function:', functionUrl);
       
       const requestPayload = {
@@ -566,13 +714,13 @@ export const useAnalysis = () => {
         console.error('[FRONTEND] ❌ Save function error response:', errorText);
         
         if (response.status === 404) {
-          throw new Error('Save function not found. Please ensure the save-analysis function is deployed to your Supabase project.');
+          throw new Error('📡 Edge Function Not Found\n\nThe save-analysis function is not deployed to your Supabase project. Please ensure all Edge Functions are properly deployed.');
         } else if (response.status === 401) {
-          throw new Error('Unauthorized. Please check your Supabase API key in the .env file.');
+          throw new Error('🔐 Authentication Failed\n\nYour Supabase API key appears to be invalid. Please check your VITE_SUPABASE_ANON_KEY in the .env file.');
         } else if (response.status === 403) {
-          throw new Error('Forbidden. Please verify your Supabase project permissions and API key.');
+          throw new Error('🚫 Access Forbidden\n\nPlease verify your Supabase project permissions and API key configuration.');
         } else {
-          throw new Error(`Save failed (${response.status}): ${errorText}`);
+          throw new Error(`💾 Save Failed (${response.status})\n\n${errorText}`);
         }
       }
 
@@ -593,12 +741,30 @@ export const useAnalysis = () => {
       return result;
     } catch (error) {
       console.error('[FRONTEND] ❌ Save analysis error:', error);
-      updateStepStatus('saving', 'error', error instanceof Error ? error.message : 'Unknown error');
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to Supabase Edge Functions. Please verify your Supabase configuration and ensure the save-analysis function is deployed.');
+        const enhancedError = new Error(`🌐 Connection Failed
+
+Unable to connect to the save analysis function. This could be due to:
+
+1. 🔧 Supabase Configuration Issues:
+   - Check your .env file for correct VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+   - Ensure your Supabase project is active and accessible
+
+2. 📡 Edge Function Deployment:
+   - Verify that the save-analysis function is deployed to your Supabase project
+   - Check your Supabase dashboard for function deployment status
+
+3. 🌐 Network Issues:
+   - Check your internet connection
+   - Try refreshing the page
+
+Please verify your Supabase configuration and try again.`);
+        updateStepStatus('saving', 'error', enhancedError.message);
+        throw enhancedError;
       }
       
+      updateStepStatus('saving', 'error', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
