@@ -16,23 +16,15 @@ There is no need to calculate indicators manually. Use the provided fields only.
 Please output the analysis according to the following criteria:
 1. Support/Resistance Zone Analysis
 Use the recent_close_price to determine current market position.
-Scoring rules for each cluster_price (from timeframes.merged):
-Base Score = number of tests
-with_ema: +1 if overlapping with any daily EMA or weekly EMA (from with_ema field)
-failed_breakouts: -1 if any failed_breakouts
+Filter cluster_price that with reasonable no. of tests and overlapping with daily EMA or weekly EMA (from timeframes.merged.significant_level)
+Compare the number of tests relatively to determine if the support or resistance zone is strong / Moderate / Weak
+State resonant EMAs explicitly in your rationale (e.g., Week 20 EMA , Day 50 EMA), and mention the source timeframe.
 
-2. Selection Rules (Based on how close the zone to recent_close_price and total Score: High → Low)
+2. Selection Rules (Select cluster_price that is close to recent_close_price and meet above requirements)
 Identify 2 strongest support zones below the recent_close_price:
 If timeframes.merged.significant_levels.challenging_direction is support, label as "Immediate Support".
 Identify 2 strongest resistance zones above the recent_close_price:
 If timeframes.merged.significant_levels.challenging_direction is resistance, label as "Immediate Resistance".
-
-Price Band: cluster_price
-Indicate the strength of the zone:
-Strong: ≥ 7 points
-Moderate: 3–6 points
-Weak: < 2 points (do not list)
-State resonant EMAs explicitly in your rationale (e.g., Week 20 EMA , Day 50 EMA), and mention the source timeframe.
 
 Output Format Example(Write plain text, no tables, no emoji):
 
